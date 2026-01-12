@@ -1,0 +1,246 @@
+/* Lobby Page Styles */
+
+.lobby-page {
+    min-height: 100vh;
+    padding: var(--space-xl);
+    display: flex;
+    justify-content: center;
+}
+
+.lobby-container {
+    max-width: 800px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+/* Header */
+.lobby-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+}
+
+.leave-btn {
+    flex-shrink: 0;
+}
+
+.room-code-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-card);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-xl);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.room-code-display:hover {
+    border-color: var(--accent-primary);
+    background: var(--bg-hover);
+}
+
+.room-code-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.room-code-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.copy-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--space-xs);
+}
+
+/* Content */
+.lobby-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Players Section */
+.players-section h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.min-players-hint {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+}
+
+.player-slot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+}
+
+.player-slot.filled {
+    border-color: var(--player-color);
+    box-shadow: 0 0 10px rgba(var(--player-color), 0.2);
+}
+
+.player-slot.is-me {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.player-slot.empty {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+.player-color-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
+.player-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.player-name {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.you-badge {
+    font-size: 0.625rem;
+    padding: 2px 6px;
+    background: var(--accent-primary);
+    border-radius: var(--radius-full);
+    font-weight: 500;
+}
+
+.host-badge {
+    font-size: 0.75rem;
+    color: var(--color-player-5);
+}
+
+.player-pieces {
+    display: flex;
+    gap: var(--space-xs);
+}
+
+.mini-piece {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.waiting-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Spectators Section */
+.spectators-section h3 {
+    margin-bottom: var(--space-md);
+}
+
+.spectators-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.spectator-badge {
+    padding: var(--space-xs) var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Rules Section */
+.rules-section h3 {
+    margin-bottom: var(--space-md);
+}
+
+.rules-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.rules-list li {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Footer */
+.lobby-footer {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-lg) 0;
+}
+
+.start-btn {
+    min-width: 300px;
+}
+
+.waiting-for-host {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .lobby-page {
+        padding: var(--space-md);
+    }
+
+    .lobby-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .room-code-display {
+        order: -1;
+    }
+
+    .players-grid {
+        grid-template-columns: 1fr;
+    }
+}

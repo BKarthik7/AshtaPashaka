@@ -1,0 +1,71 @@
+/* Game Board Styles */
+
+.game-board-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-md);
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.game-board-svg {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-xl);
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 4px rgba(101, 163, 13, 0.3);
+    background: #FEF9C3;
+}
+
+/* Game pieces */
+.game-piece {
+    transition: transform 0.2s ease;
+}
+
+.game-piece.movable:hover {
+    transform: scale(1.15);
+}
+
+.game-piece.movable {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+/* Pulse animation for movable pieces */
+.pulse-ring {
+    animation: pulseRing 1.5s ease-out infinite;
+    transform-origin: center;
+}
+
+@keyframes pulseRing {
+    0% {
+        opacity: 1;
+        r: 18;
+    }
+
+    100% {
+        opacity: 0;
+        r: 28;
+    }
+}
+
+/* Finished pieces glow */
+.game-piece.finished circle {
+    filter: drop-shadow(0 0 10px gold);
+}
+
+/* Responsive sizing */
+@media (max-width: 768px) {
+    .game-board-wrapper {
+        padding: var(--space-sm);
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-board-wrapper {
+        padding: 4px;
+    }
+}

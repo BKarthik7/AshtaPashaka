@@ -1,0 +1,174 @@
+/* Game Page Styles */
+
+.game-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-xl);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.leave-btn {
+    font-size: 0.875rem;
+    padding: var(--space-sm) var(--space-md);
+}
+
+.room-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.room-label {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.room-code {
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+.turn-display {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-full);
+}
+
+.current-player-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+/* Main Area */
+.game-main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: var(--space-xl);
+    padding: var(--space-xl);
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.board-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Dice Section */
+.dice-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+}
+
+.move-hint {
+    font-size: 0.875rem;
+    color: var(--accent-primary);
+    text-align: center;
+    animation: pulse 2s infinite;
+}
+
+/* Game Over Screen */
+.game-over-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl);
+    background: var(--gradient-dark);
+}
+
+.game-over-content {
+    text-align: center;
+    max-width: 400px;
+    animation: slideUp var(--transition-slow) ease;
+}
+
+.trophy {
+    font-size: 5rem;
+    margin-bottom: var(--space-lg);
+    animation: bounce 1s infinite;
+}
+
+.game-over-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-md);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.winner-message {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xl);
+}
+
+.winner-color-badge {
+    display: inline-block;
+    padding: var(--space-md) var(--space-xl);
+    border-radius: var(--radius-full);
+    color: white;
+    font-weight: 600;
+    margin-bottom: var(--space-xl);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .game-main {
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+    }
+
+    .side-panel {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .dice-section,
+    .player-list-container {
+        flex: 1;
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 600px) {
+    .game-header {
+        flex-direction: column;
+        gap: var(--space-sm);
+        padding: var(--space-md);
+    }
+
+    .game-main {
+        padding: var(--space-md);
+    }
+
+    .side-panel {
+        flex-direction: column;
+    }
+}

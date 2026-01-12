@@ -1,0 +1,102 @@
+/* Dice Styles */
+
+.dice-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.dice {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    border: none;
+    border-radius: var(--radius-lg);
+    box-shadow:
+        4px 4px 10px rgba(0, 0, 0, 0.2),
+        -2px -2px 6px rgba(255, 255, 255, 0.5),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 12px;
+}
+
+.dice:not(.disabled):hover {
+    transform: scale(1.05);
+    box-shadow:
+        6px 6px 15px rgba(0, 0, 0, 0.25),
+        -3px -3px 10px rgba(255, 255, 255, 0.6),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.dice:not(.disabled):active {
+    transform: scale(0.95);
+}
+
+.dice.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.dice.rolling {
+    animation: diceRoll 0.8s ease-out;
+}
+
+@keyframes diceRoll {
+    0% {
+        transform: rotateX(0) rotateY(0) rotateZ(0);
+    }
+
+    25% {
+        transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg) scale(1.1);
+    }
+
+    50% {
+        transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg) scale(1.15);
+    }
+
+    75% {
+        transform: rotateX(270deg) rotateY(270deg) rotateZ(135deg) scale(1.1);
+    }
+
+    100% {
+        transform: rotateX(360deg) rotateY(360deg) rotateZ(0) scale(1);
+    }
+}
+
+.dice-face {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.dice-dot {
+    width: 14px;
+    height: 14px;
+    background: radial-gradient(circle at 30% 30%, #4a4a4a, #1a1a1a);
+    border-radius: 50%;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.2);
+    justify-self: center;
+    align-self: center;
+}
+
+.dice-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Large dice variant */
+.dice-large {
+    width: 100px;
+    height: 100px;
+}
+
+.dice-large .dice-dot {
+    width: 18px;
+    height: 18px;
+}

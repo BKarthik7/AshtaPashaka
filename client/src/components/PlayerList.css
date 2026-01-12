@@ -1,0 +1,148 @@
+/* Player List Styles */
+
+.player-list-container {
+    background: var(--gradient-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+}
+
+.player-list-title {
+    margin-bottom: var(--space-md);
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.player-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.player-item.current-turn {
+    border-color: var(--player-color);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 15px rgba(var(--player-color), 0.3);
+}
+
+.player-item.is-me {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.player-color-indicator {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.turn-indicator {
+    font-size: 1.25rem;
+    animation: bounce 1s infinite;
+}
+
+.player-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.player-name-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xs);
+}
+
+.player-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.you-tag {
+    font-size: 0.625rem;
+    padding: 2px 6px;
+    background: var(--accent-primary);
+    border-radius: var(--radius-full);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.player-progress {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.progress-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.progress-icon {
+    font-size: 0.875rem;
+}
+
+/* Spectators */
+.spectators-section {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.spectators-title {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-sm);
+}
+
+.spectators-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.spectator-tag {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+}
+
+/* Spectator Mode Notice */
+.spectator-mode-notice {
+    margin-top: var(--space-lg);
+    padding: var(--space-md);
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: #EAB308;
+    font-size: 0.875rem;
+}
+
+.notice-icon {
+    font-size: 1.25rem;
+}
