@@ -54,6 +54,59 @@
     border-radius: 50%;
 }
 
+/* Turn Timer */
+.turn-timer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    min-width: 65px;
+    justify-content: center;
+}
+
+.turn-timer.my-turn {
+    border-color: var(--accent-primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.turn-timer.urgent {
+    border-color: #EF4444;
+    background: rgba(239, 68, 68, 0.15);
+    animation: urgentPulse 0.5s infinite;
+}
+
+.timer-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+}
+
+.turn-timer.urgent .timer-value {
+    color: #EF4444;
+}
+
+.timer-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+@keyframes urgentPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
 /* Main Area */
 .game-main {
     flex: 1;

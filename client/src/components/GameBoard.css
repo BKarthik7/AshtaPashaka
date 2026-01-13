@@ -21,21 +21,8 @@
 }
 
 /* Game pieces */
-.game-piece {
-    transition: transform 0.2s ease;
-}
-
 .game-piece.movable {
     cursor: pointer;
-}
-
-.game-piece.movable:hover {
-    transform: scale(1.1);
-}
-
-/* Movable indicator - simple glow, no animation to avoid buzzing */
-.movable-glow {
-    filter: drop-shadow(0 0 6px #FFFFFF) drop-shadow(0 0 12px #FFFFFF);
 }
 
 /* Finished pieces glow */

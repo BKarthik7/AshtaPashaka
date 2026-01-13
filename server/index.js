@@ -283,6 +283,9 @@ function handleStartGame(ws, playerId) {
         ...gameManager.getGameState(roomId)
     });
 
+    // Start turn timer
+    gameManager.startTurnTimer(roomId, onTurnTimeout);
+
     console.log(`Game started in room ${roomId} with ${room.players.length} players`);
 }
 
@@ -310,6 +313,9 @@ function handleRollDice(ws, playerId) {
         skipped: result.skipped,
         ...result.game
     });
+
+    // Restart timer (for piece selection or next turn)
+    gameManager.startTurnTimer(roomId, onTurnTimeout);
 }
 
 // Handler: Move Piece
@@ -342,7 +348,22 @@ function handleMovePiece(ws, message, playerId) {
 
     if (result.gameOver) {
         console.log(`Game over in room ${roomId}. Winner: ${result.winner}`);
+    } else {
+        // Restart timer for next action/turn
+        gameManager.startTurnTimer(roomId, onTurnTimeout);
     }
+}
+
+// Turn timeout callback
+function onTurnTimeout(roomId, gameState) {
+    console.log(`Turn timeout in room ${roomId}`);
+    roomManager.broadcast(roomId, {
+        type: 'TURN_TIMEOUT',
+        ...gameState
+    });
+
+    // Start timer for new turn
+    gameManager.startTurnTimer(roomId, onTurnTimeout);
 }
 
 // Handler: Chat message

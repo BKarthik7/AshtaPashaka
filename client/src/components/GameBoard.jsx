@@ -269,8 +269,9 @@ function GameBoard({
                         return (
                             <g
                                 key={`piece-${playerId}-${token.id}`}
-                                className={`game-piece ${isMovable ? 'movable movable-glow' : ''}`}
+                                className={`game-piece ${isMovable ? 'movable' : ''}`}
                                 onClick={() => handlePieceClick(playerId, token.id)}
+                                style={{ pointerEvents: isMovable ? 'auto' : 'none' }}
                             >
                                 {/* Shadow */}
                                 <circle

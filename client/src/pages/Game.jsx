@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGame } from '../context/GameContext';
 import GameBoard from '../components/GameBoard';
 import Dice from '../components/Dice';
@@ -24,6 +24,26 @@ function Game() {
     } = useGame();
 
     const [isRolling, setIsRolling] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(10);
+
+    // Turn timer countdown
+    useEffect(() => {
+        if (!gameState?.turnStartedAt || winner) {
+            setTimeLeft(10);
+            return;
+        }
+
+        const updateTimer = () => {
+            const elapsed = Date.now() - gameState.turnStartedAt;
+            const remaining = Math.max(0, Math.ceil((10000 - elapsed) / 1000));
+            setTimeLeft(remaining);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 200);
+
+        return () => clearInterval(interval);
+    }, [gameState?.turnStartedAt, gameState?.currentPlayerId, winner]);
 
     const handleRollDice = () => {
         if (!isMyTurn || isRolling) return;
@@ -75,6 +95,13 @@ function Game() {
                     <span className="room-label">Room</span>
                     <span className="room-code">{roomId}</span>
                 </div>
+
+                {/* Timer Display */}
+                <div className={`turn-timer ${timeLeft <= 3 ? 'urgent' : ''} ${isMyTurn ? 'my-turn' : ''}`}>
+                    <span className="timer-value">{timeLeft}</span>
+                    <span className="timer-label">sec</span>
+                </div>
+
                 <div className="turn-display">
                     {currentPlayer && (
                         <>

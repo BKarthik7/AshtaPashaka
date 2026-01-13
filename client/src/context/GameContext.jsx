@@ -225,6 +225,15 @@ export function GameProvider({ children }) {
             }
         }));
 
+        // Turn timeout - player took too long
+        unsubscribers.push(ws.on('TURN_TIMEOUT', (msg) => {
+            setGameState(prev => ({ ...prev, ...msg }));
+            setCurrentTurnPlayerId(msg.currentPlayerId);
+            setDiceValue(null);
+            setValidMoves([]);
+            showToast('Turn timed out! Moving to next player.', 'info');
+        }));
+
         // Error
         unsubscribers.push(ws.on('ERROR', (msg) => {
             showToast(msg.message, 'error');
