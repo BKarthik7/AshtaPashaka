@@ -27,11 +27,13 @@ A modern, multiplayer web-based implementation of **AshtaPashaka** (अष्ट
 ## 🎲 Game Rules
 
 ### Board Layout
+
 - **8-Player Board**: A circular board with 8 home bases positioned at cardinal and diagonal directions
 - **104 Total Track Cells**: 13 cells per player (8 players × 13 = 104 cells)
 - **Home Stretch**: 4 cells in the home stretch leading to the center (finish position)
 
 ### Player Setup
+
 - **Players**: 2-8 players (each with a unique color)
 - **Pieces**: Each player has 4 tokens/pieces
 - **Starting Position**: All pieces begin in the home base
@@ -40,35 +42,42 @@ A modern, multiplayer web-based implementation of **AshtaPashaka** (अष्ट
 ### Movement Rules
 
 #### Rolling the Dice
+
 - Players roll a virtual dice showing values 1-6
 - Players must roll in their turn (if you don't move within 10 seconds, turn passes to the next player)
 
 #### Leaving Home
+
 - A piece can **only exit the home base with a roll of 6**
 - When you roll a 6, one of your pieces enters the track
 - Rolling a 6 gives you **another turn** (standard Ludo rule)
 
 #### Moving on the Track
+
 - After rolling, you move one of your pieces by the number shown on the dice
 - Each piece moves along the circular track
 - The track is divided into 8 sections (one per player, 13 cells each)
 - After traveling around the main track, a piece enters the **home stretch**
 
 #### Home Stretch Movement
+
 - Once a piece reaches the home stretch (4 cells before center), it moves along the home stretch
 - **Important**: You must roll the **exact number** to reach the finish (center)
 - You cannot "overshoot" the finish - the move is only valid if it lands exactly on the finish position
 
 #### Capturing Opponent Pieces
+
 - If your piece lands on the same cell as an opponent's piece, the opponent's piece is **captured**
 - Captured pieces return to their home base
 - **Safe Zones**: Pieces in their own home base cannot be captured
 
 #### Winning
+
 - **First player to get all 4 pieces to the center wins**
 - The other players continue if desired
 
 ### Special Rules
+
 - **Exact Roll Required to Finish**: Unlike standard Ludo, you must roll the exact number to land on the finish cell. For example, if you're 3 cells away from finish, you must roll a 3.
 - **Turn Timer**: If a player doesn't make a move within 10 seconds, their turn automatically passes to the next player
 - **Spectator Mode**: When a room is full (8 players), additional players can join as spectators
@@ -87,18 +96,21 @@ A modern, multiplayer web-based implementation of **AshtaPashaka** (अष्ट
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **React 19.2+**: UI framework
 - **Vite 7.2+**: Build tool and dev server
 - **JavaScript ES6+**: Core language
 - **CSS3**: Styling with CSS variables and Flexbox/Grid
 
 ### Backend
+
 - **Node.js**: Runtime environment
 - **WebSocket (ws)**: Real-time bidirectional communication
 - **UUID**: Unique identifier generation
 - **ES6 Modules**: Modern JavaScript modules
 
 ### Architecture
+
 - **Client-Server Model**: Real-time bidirectional communication via WebSockets
 - **Room-Based State Management**: Each game room has its own state
 - **Server-Side Game Logic**: All game rules enforced on the server
@@ -106,10 +118,12 @@ A modern, multiplayer web-based implementation of **AshtaPashaka** (अष्ट
 ## 📦 Setup & Installation
 
 ### Prerequisites
+
 - **Node.js** (v16 or higher)
 - **npm** or **yarn** package manager
 
 ### Clone the Repository
+
 ```bash
 git clone https://github.com/BKarthik7/AshtaPashaka.git
 cd AshtaPashaka
@@ -118,12 +132,14 @@ cd AshtaPashaka
 ### Install Dependencies
 
 #### Client
+
 ```bash
 cd client
 npm install
 ```
 
 #### Server
+
 ```bash
 cd server
 npm install
@@ -132,6 +148,7 @@ npm install
 ## 🚀 Running the Game
 
 ### Start the Server
+
 ```bash
 cd server
 npm start
@@ -142,7 +159,9 @@ npm run dev
 The server will start on `http://localhost:3001` by default.
 
 ### Start the Client
+
 In a new terminal:
+
 ```bash
 cd client
 npm run dev
@@ -153,32 +172,38 @@ The client will start on `http://localhost:5173` by default and automatically op
 ### Environment Variables
 
 #### Server (.env or environment)
+
 ```
 PORT=3001  # WebSocket server port (default: 3001)
 ```
 
 #### Client (vite.config.js)
+
 The client is configured to connect to `localhost:3001` by default. Modify if your server is on a different host/port.
 
 ## 🎮 Game Controls
 
 ### Landing Page
+
 1. **Enter Your Name**: Type your player name
 2. **Create Room**: Host a new game (generates a unique room code)
 3. **Join Room**: Join an existing game with a room code
 
 ### Lobby
+
 1. **Wait for Players**: Other players join using your room code
 2. **Start Game**: When at least 2 players are ready, the host can start the game
 3. **Leave Room**: Exit the lobby and return to landing page
 
 ### Game Board
+
 1. **Roll Dice**: Click the dice area when it's your turn (turn timer shows how much time is left)
 2. **Select Piece**: After rolling, click on one of your valid pieces to move it
 3. **Watch Others**: View other players' moves and piece positions in real-time
 4. **Game Over**: When you win, click "Back to Lobby" to return to the lobby
 
 ### Game State Indicators
+
 - 🎲 **Turn Timer**: Shows remaining seconds for the current player
 - **Valid Moves**: Highlighted pieces that can be moved based on the current dice roll
 - **Player Colors**: Each player has a distinct color badge
@@ -187,6 +212,7 @@ The client is configured to connect to `localhost:3001` by default. Modify if yo
 ## 🏗️ Architecture
 
 ### Project Structure
+
 ```
 AshtaPashaka/
 ├── client/                          # React frontend
@@ -234,6 +260,7 @@ AshtaPashaka/
 ### WebSocket Messages
 
 #### Client → Server
+
 - `CREATE_ROOM`: Create a new game room
 - `JOIN_ROOM`: Join an existing room by code
 - `START_GAME`: Start the game (host only)
@@ -242,6 +269,7 @@ AshtaPashaka/
 - `LEAVE_ROOM`: Leave the current room
 
 #### Server → Client
+
 - `CONNECTED`: Initial connection confirmation
 - `RECONNECTED`: Reconnection to existing session
 - `ROOM_STATE`: Current state of the room
@@ -254,7 +282,9 @@ AshtaPashaka/
 ## 🎨 Visual Design
 
 ### Color Scheme
+
 The game uses 8 distinct colors for players:
+
 - 🔵 **Blue** - Player 1
 - 🔴 **Red** - Player 2
 - 🟣 **Purple** - Player 3
@@ -265,6 +295,7 @@ The game uses 8 distinct colors for players:
 - 🩷 **Pink** - Player 8
 
 ### Board Layout
+
 - Circular board with 8 home bases at cardinal and diagonal positions
 - Wavy track pattern representing movement sections
 - Clear visual distinction between main track and home stretch
@@ -298,6 +329,7 @@ This project is open-source and available for learning and non-commercial use.
 ## 🤝 Contributing
 
 Feel free to fork, improve, and submit pull requests! Some ideas for enhancement:
+
 - Power-ups and special moves
 - Different difficulty levels
 - Game statistics and leaderboards
