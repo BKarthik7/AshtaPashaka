@@ -1,6 +1,29 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://10.20.19.137:3001';
+// Convert HTTP(S) URLs to WS(S) URLs
+const getWebSocketUrl = () => {
+    const envUrl = import.meta.env.VITE_WS_URL;
+
+    if (!envUrl) {
+        // Default for local development
+        return 'ws://localhost:3001';
+    }
+
+    // Convert https:// to wss:// and http:// to ws://
+    let wsUrl = envUrl;
+    if (wsUrl.startsWith('https://')) {
+        wsUrl = wsUrl.replace('https://', 'wss://');
+    } else if (wsUrl.startsWith('http://')) {
+        wsUrl = wsUrl.replace('http://', 'ws://');
+    }
+
+    // Remove trailing slash if present
+    wsUrl = wsUrl.replace(/\/$/, '');
+
+    return wsUrl;
+};
+
+const WS_URL = getWebSocketUrl();
 
 export function useWebSocket() {
     const [isConnected, setIsConnected] = useState(false);
