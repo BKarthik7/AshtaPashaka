@@ -13,10 +13,8 @@ const PLAYER_COLORS = [
     { name: 'Pink', hex: '#EC4899', light: '#FCE7F3' }
 ];
 
-// IMPORTANT: Backend uses 13 cells per player = 104 total cells
-// We need to match this exactly for proper movement
 const CELLS_PER_PLAYER = 13;
-const TOTAL_TRACK_CELLS = CELLS_PER_PLAYER * 8; // 104 cells
+const TOTAL_TRACK_CELLS = CELLS_PER_PLAYER * 8;
 
 function GameBoard({
     gameState,
@@ -35,19 +33,18 @@ function GameBoard({
         const trackCells = [];
         const homeStretchCells = [];
 
-        // Home base positions (in corners/edges)
+        // Home base positions
         const homePositions = [
-            { x: center, y: 70 },          // Top (Blue) - player 0
-            { x: 590, y: 140 },            // Top-right (Red) - player 1
-            { x: 630, y: center },         // Right (Purple) - player 2
-            { x: 590, y: 560 },            // Bottom-right (Green) - player 3
-            { x: center, y: 630 },         // Bottom (Yellow) - player 4
-            { x: 110, y: 560 },            // Bottom-left (Black) - player 5
-            { x: 70, y: center },          // Left (Orange) - player 6
-            { x: 110, y: 140 }             // Top-left (Pink) - player 7
+            { x: center, y: 70 },
+            { x: 590, y: 140 },
+            { x: 630, y: center },
+            { x: 590, y: 560 },
+            { x: center, y: 630 },
+            { x: 110, y: 560 },
+            { x: 70, y: center },
+            { x: 110, y: 140 }
         ];
 
-        // Create home bases
         for (let i = 0; i < 8; i++) {
             const pos = homePositions[i];
             const color = PLAYER_COLORS[i];
@@ -62,36 +59,28 @@ function GameBoard({
             });
         }
 
-        // Create main track - 104 cells arranged in a circular path
-        // The track goes clockwise around the board
+        // Main track - separate white cells and colored start cells
         const trackRadius = 200;
-        const innerRadius = 150; // For the wavy part of the track
+        const whiteCells = [];
+        const coloredCells = [];
 
         for (let cellId = 0; cellId < TOTAL_TRACK_CELLS; cellId++) {
             const playerSection = Math.floor(cellId / CELLS_PER_PLAYER);
             const localIndex = cellId % CELLS_PER_PLAYER;
 
-            // Calculate angle for this cell
-            // Each player section spans 45 degrees (360/8)
-            // Within each section, cells are spread evenly
-            const sectionAngle = playerSection * 45; // 0, 45, 90, ...
-            const cellAngleOffset = (localIndex - 6) * 3.5; // Spread around section center
-
-            // Start from top (-90 degrees) and go clockwise
+            const sectionAngle = playerSection * 45;
+            const cellAngleOffset = (localIndex - 6) * 3.5;
             const angle = -90 + sectionAngle + cellAngleOffset;
             const angleRad = (angle * Math.PI) / 180;
 
-            // Vary radius slightly to create the wavy pattern
             const radiusVariation = Math.sin(localIndex * Math.PI / 6) * 15;
             const currentRadius = trackRadius + radiusVariation;
 
             const x = center + Math.cos(angleRad) * currentRadius;
             const y = center + Math.sin(angleRad) * currentRadius;
 
-            // The start cell for each player is at the beginning of their section
             const isStart = localIndex === 0;
-
-            trackCells.push({
+            const cell = {
                 id: cellId,
                 playerSection,
                 localIndex,
@@ -99,20 +88,26 @@ function GameBoard({
                 y,
                 isStart,
                 color: isStart ? PLAYER_COLORS[playerSection] : null
-            });
+            };
+
+            if (isStart) {
+                coloredCells.push(cell);
+            } else {
+                whiteCells.push(cell);
+            }
         }
 
-        // Create home stretch cells - 4 cells per player leading to center
+        // Combine: white first (bottom), colored on top
+        trackCells.push(...whiteCells, ...coloredCells);
+
+        // Home stretch cells (all colored)
         for (let playerIdx = 0; playerIdx < 8; playerIdx++) {
             const color = PLAYER_COLORS[playerIdx];
-            // Home stretch goes from track toward center
-            // Entry point is at cell index (playerIdx * 13 + 6) - the middle of their section
-
-            const playerAngle = -90 + playerIdx * 45; // Same as section angle
+            const playerAngle = -90 + playerIdx * 45;
             const angleRad = (playerAngle * Math.PI) / 180;
 
             for (let stretchIdx = 0; stretchIdx < 4; stretchIdx++) {
-                const stretchRadius = 120 - stretchIdx * 25; // Move toward center
+                const stretchRadius = 120 - stretchIdx * 25;
                 const x = center + Math.cos(angleRad) * stretchRadius;
                 const y = center + Math.sin(angleRad) * stretchRadius;
 
@@ -130,28 +125,31 @@ function GameBoard({
         return { homeBases, trackCells, homeStretchCells };
     }, [gameState?.playerCount]);
 
-    // Get visual position for a piece based on its game state position
+    // Calculate finished pieces count per player
+    const finishedCounts = useMemo(() => {
+        const counts = {};
+        if (gameState?.pieces) {
+            Object.entries(gameState.pieces).forEach(([playerId, playerPieces]) => {
+                const finished = playerPieces.tokens.filter(t => t.position === 'finished').length;
+                counts[playerId] = { count: finished, colorIndex: playerPieces.colorIndex };
+            });
+        }
+        return counts;
+    }, [gameState?.pieces]);
+
     const getPiecePosition = (token, playerColorIndex) => {
         if (token.position === 'home') {
             const homeBase = boardLayout.homeBases[playerColorIndex];
             if (!homeBase) return null;
 
-            // 2x2 grid layout in home base
             const offsets = [[-18, -18], [18, -18], [-18, 18], [18, 18]];
             const [ox, oy] = offsets[token.homePosition] || [0, 0];
             return { x: homeBase.x + ox, y: homeBase.y + oy, inHome: true };
         }
 
+        // Finished pieces are drawn separately in diamond
         if (token.position === 'finished') {
-            // Finished pieces go to center area
-            const playerAngle = -90 + playerColorIndex * 45;
-            const angleRad = (playerAngle * Math.PI) / 180;
-            const finishedRadius = 25 + token.id * 10;
-            return {
-                x: center + Math.cos(angleRad) * finishedRadius,
-                y: center + Math.sin(angleRad) * finishedRadius,
-                finished: true
-            };
+            return null; // Don't draw as individual piece
         }
 
         if (typeof token.position === 'string' && token.position.startsWith('home_stretch_')) {
@@ -163,7 +161,6 @@ function GameBoard({
         }
 
         if (typeof token.position === 'number') {
-            // Position is a track cell ID (0-103)
             const cell = boardLayout.trackCells.find(c => c.id === token.position);
             if (cell) return { x: cell.x, y: cell.y };
         }
@@ -196,7 +193,7 @@ function GameBoard({
                     rx="15" fill="none" stroke="#65A30D" strokeWidth="8"
                 />
 
-                {/* Home Bases - Rounded boxes */}
+                {/* Home Bases */}
                 {boardLayout.homeBases.map((base, i) => (
                     <g key={`home-${i}`} opacity={base.isActive ? 1 : 0.25}>
                         <rect
@@ -209,7 +206,6 @@ function GameBoard({
                             stroke={base.color.hex}
                             strokeWidth="3"
                         />
-                        {/* 4 piece slots */}
                         {[[-18, -18], [18, -18], [-18, 18], [18, 18]].map(([ox, oy], slotIdx) => (
                             <circle
                                 key={`slot-${i}-${slotIdx}`}
@@ -225,20 +221,20 @@ function GameBoard({
                     </g>
                 ))}
 
-                {/* Main Track Cells - 104 cells total */}
-                {boardLayout.trackCells.map((cell) => (
+                {/* Main Track - White cells first (bottom layer) */}
+                {boardLayout.trackCells.filter(c => !c.isStart).map((cell) => (
                     <circle
                         key={`track-${cell.id}`}
                         cx={cell.x}
                         cy={cell.y}
                         r="11"
-                        fill={cell.color?.hex || '#FFFFFF'}
+                        fill="#FFFFFF"
                         stroke="#1F2937"
                         strokeWidth="2"
                     />
                 ))}
 
-                {/* Home Stretch Cells - Colored paths to center */}
+                {/* Home Stretch Cells - Colored (top layer) */}
                 {boardLayout.homeStretchCells.map((cell) => (
                     <circle
                         key={cell.id}
@@ -251,13 +247,63 @@ function GameBoard({
                     />
                 ))}
 
-                {/* Center Diamond Goal */}
+                {/* Main Track - Colored start cells (top layer) */}
+                {boardLayout.trackCells.filter(c => c.isStart).map((cell) => (
+                    <circle
+                        key={`track-start-${cell.id}`}
+                        cx={cell.x}
+                        cy={cell.y}
+                        r="11"
+                        fill={cell.color.hex}
+                        stroke="#1F2937"
+                        strokeWidth="2"
+                    />
+                ))}
+
+                {/* Center Diamond - LARGER */}
                 <g transform={`translate(${center}, ${center})`}>
-                    <polygon points="0,-40 40,0 0,40 -40,0" fill="#FFFFFF" stroke="#1F2937" strokeWidth="3" />
-                    <polygon points="0,-28 28,0 0,28 -28,0" fill="#FEF9C3" stroke="#1F2937" strokeWidth="2" />
+                    <polygon points="0,-55 55,0 0,55 -55,0" fill="#FFFFFF" stroke="#1F2937" strokeWidth="3" />
+                    <polygon points="0,-42 42,0 0,42 -42,0" fill="#FEF9C3" stroke="#1F2937" strokeWidth="2" />
+
+                    {/* Finished pieces display inside diamond */}
+                    {gameState?.pieces && Object.entries(finishedCounts).map(([playerId, data], idx) => {
+                        if (data.count === 0) return null;
+
+                        const color = PLAYER_COLORS[data.colorIndex];
+                        // Position finished pieces in a circular arrangement inside diamond
+                        const angle = (-90 + data.colorIndex * 45) * Math.PI / 180;
+                        const radius = 22;
+                        const x = Math.cos(angle) * radius;
+                        const y = Math.sin(angle) * radius;
+
+                        return (
+                            <g key={`finished-${playerId}`}>
+                                {/* Piece indicator */}
+                                <circle
+                                    cx={x}
+                                    cy={y}
+                                    r="12"
+                                    fill={color.hex}
+                                    stroke="#FFFFFF"
+                                    strokeWidth="2"
+                                />
+                                {/* Count number */}
+                                <text
+                                    x={x}
+                                    y={y + 4}
+                                    textAnchor="middle"
+                                    fontSize="11"
+                                    fontWeight="bold"
+                                    fill="#FFFFFF"
+                                >
+                                    {data.count}
+                                </text>
+                            </g>
+                        );
+                    })}
                 </g>
 
-                {/* Game Pieces */}
+                {/* Game Pieces (not finished) */}
                 {gameState?.pieces && Object.entries(gameState.pieces).map(([playerId, playerPieces]) => (
                     playerPieces.tokens.map(token => {
                         const pos = getPiecePosition(token, playerPieces.colorIndex);
@@ -296,7 +342,7 @@ function GameBoard({
                                     r={3}
                                     fill="rgba(255,255,255,0.5)"
                                 />
-                                {/* Movable border indicator */}
+                                {/* Movable indicator */}
                                 {isMovable && (
                                     <circle
                                         cx={pos.x}

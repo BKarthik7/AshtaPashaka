@@ -3,22 +3,23 @@ import { PLAYER_COLORS } from './RoomManager.js';
 // Board configuration for 8-player Ludo
 // Each player has 4 pieces, 13 cells per player section = 104 total track cells
 // Turn timer: 10 seconds per move
+// IMPORTANT: Exact roll required to finish (no overshooting)
 
 const TURN_TIME_LIMIT = 10000; // 10 seconds in milliseconds
 const CELLS_PER_PLAYER = 13;
 const TOTAL_TRACK_CELLS = CELLS_PER_PLAYER * 8; // 104
+const HOME_STRETCH_LENGTH = 4; // 4 cells in home stretch before center
 
 class GameManager {
     constructor() {
         this.games = new Map();
-        this.turnTimers = new Map(); // roomId -> timer
+        this.turnTimers = new Map();
     }
 
     // Initialize a new game
     initializeGame(room) {
         const playerCount = room.players.length;
 
-        // Each player gets 4 pieces
         const pieces = {};
         room.players.forEach((player, index) => {
             pieces[player.id] = {
@@ -91,17 +92,13 @@ class GameManager {
         if (!game || game.phase === 'GAME_OVER') return;
 
         console.log(`Turn timeout in room ${roomId}`);
-
-        // Skip to next player
         this.nextTurn(roomId);
 
-        // Callback to notify players
         if (onTimeUp) {
             onTimeUp(roomId, this.getGameState(roomId));
         }
     }
 
-    // Get game state
     getGame(roomId) {
         return this.games.get(roomId);
     }
@@ -119,17 +116,14 @@ class GameManager {
             return { success: false, error: 'Already rolled' };
         }
 
-        // Roll the dice (1-6)
         const diceValue = Math.floor(Math.random() * 6) + 1;
         game.diceValue = diceValue;
         game.diceRolled = true;
         game.phase = 'SELECT_PIECE';
 
-        // Check if player has any valid moves
         const validMoves = this.getValidMoves(roomId, playerId);
 
         if (validMoves.length === 0) {
-            // No valid moves, skip to next player
             this.nextTurn(roomId);
             return {
                 success: true,
@@ -150,6 +144,7 @@ class GameManager {
     }
 
     // Get valid moves for current dice roll
+    // IMPORTANT: Exact roll required to finish - can't overshoot
     getValidMoves(roomId, playerId) {
         const game = this.games.get(roomId);
         if (!game) return [];
@@ -159,6 +154,7 @@ class GameManager {
 
         const validMoves = [];
         const diceValue = game.diceValue;
+        const playerColorIndex = playerPieces.colorIndex;
 
         playerPieces.tokens.forEach(token => {
             if (token.position === 'home') {
@@ -168,9 +164,32 @@ class GameManager {
                 }
             } else if (token.position === 'finished') {
                 // Already finished, can't move
-            } else {
-                // On the track or home stretch, can move forward
-                validMoves.push({ tokenId: token.id, canMove: true, type: 'MOVE' });
+            } else if (typeof token.position === 'string' && token.position.startsWith('home_stretch_')) {
+                // In home stretch - check if exact roll to finish
+                const currentStretchPos = parseInt(token.position.split('_')[2]);
+                const stepsToFinish = HOME_STRETCH_LENGTH - currentStretchPos;
+
+                // Can only move if dice value doesn't overshoot
+                if (diceValue <= stepsToFinish) {
+                    validMoves.push({ tokenId: token.id, canMove: true, type: 'MOVE' });
+                }
+            } else if (typeof token.position === 'number') {
+                // On main track - check if entering home stretch would overshoot
+                const startPos = playerColorIndex * CELLS_PER_PLAYER;
+                const distanceFromStart = (token.position - startPos + TOTAL_TRACK_CELLS) % TOTAL_TRACK_CELLS;
+                const newDistanceFromStart = distanceFromStart + diceValue;
+
+                if (newDistanceFromStart >= TOTAL_TRACK_CELLS) {
+                    // Would enter home stretch - check if overshooting
+                    const homeStretchPos = newDistanceFromStart - TOTAL_TRACK_CELLS;
+                    if (homeStretchPos <= HOME_STRETCH_LENGTH) {
+                        validMoves.push({ tokenId: token.id, canMove: true, type: 'MOVE' });
+                    }
+                    // If overshooting, don't add to valid moves
+                } else {
+                    // Normal movement on track
+                    validMoves.push({ tokenId: token.id, canMove: true, type: 'MOVE' });
+                }
             }
         });
 
@@ -203,20 +222,12 @@ class GameManager {
 
         if (token.position === 'home') {
             if (diceValue === 6) {
-                // Move out of home to starting position
                 const startPos = playerPieces.colorIndex * CELLS_PER_PLAYER;
                 token.position = startPos;
                 moved = true;
             }
         } else if (typeof token.position === 'number') {
-            // On main track
             const playerColorIndex = playerPieces.colorIndex;
-            const entryToHomeStretch = (playerColorIndex * CELLS_PER_PLAYER + CELLS_PER_PLAYER - 1);
-
-            let newPosition = token.position + diceValue;
-
-            // Check if we need to wrap or enter home stretch
-            // Player enters home stretch when they've gone around the full track and reach their entry point
             const startPos = playerColorIndex * CELLS_PER_PLAYER;
             const distanceFromStart = (token.position - startPos + TOTAL_TRACK_CELLS) % TOTAL_TRACK_CELLS;
             const newDistanceFromStart = distanceFromStart + diceValue;
@@ -224,30 +235,31 @@ class GameManager {
             if (newDistanceFromStart >= TOTAL_TRACK_CELLS) {
                 // Entering home stretch
                 const homeStretchPos = newDistanceFromStart - TOTAL_TRACK_CELLS;
-                if (homeStretchPos >= 4) {
+                if (homeStretchPos === HOME_STRETCH_LENGTH) {
+                    // Exact roll to finish!
                     token.position = 'finished';
-                } else {
+                } else if (homeStretchPos < HOME_STRETCH_LENGTH) {
                     token.position = `home_stretch_${homeStretchPos}`;
                 }
+                // If overshooting, move shouldn't happen (validated in getValidMoves)
             } else {
                 // Normal movement on track
-                newPosition = (token.position + diceValue) % TOTAL_TRACK_CELLS;
+                const newPosition = (token.position + diceValue) % TOTAL_TRACK_CELLS;
                 token.position = newPosition;
-
-                // Check for captures
                 captured = this.checkCapture(game, playerId, newPosition);
             }
             moved = true;
         } else if (typeof token.position === 'string' && token.position.startsWith('home_stretch_')) {
-            // In home stretch
             const currentStretchPos = parseInt(token.position.split('_')[2]);
             const newStretchPos = currentStretchPos + diceValue;
 
-            if (newStretchPos >= 4) {
+            if (newStretchPos === HOME_STRETCH_LENGTH) {
+                // Exact roll to finish!
                 token.position = 'finished';
-            } else {
+            } else if (newStretchPos < HOME_STRETCH_LENGTH) {
                 token.position = `home_stretch_${newStretchPos}`;
             }
+            // If overshooting, move shouldn't happen (validated in getValidMoves)
             moved = true;
         }
 
@@ -255,7 +267,6 @@ class GameManager {
             return { success: false, error: 'Invalid move' };
         }
 
-        // Record move history
         game.turnHistory.push({
             playerId,
             tokenId,
@@ -285,7 +296,7 @@ class GameManager {
             game.diceRolled = false;
             game.diceValue = null;
             game.phase = 'ROLL_DICE';
-            game.turnStartedAt = Date.now(); // Reset timer for bonus turn
+            game.turnStartedAt = Date.now();
         } else {
             this.nextTurn(roomId);
         }
@@ -299,14 +310,12 @@ class GameManager {
         };
     }
 
-    // Check if a move captures an opponent's piece
     checkCapture(game, movingPlayerId, position) {
         for (const [playerId, playerPieces] of Object.entries(game.pieces)) {
             if (playerId === movingPlayerId) continue;
 
             for (const token of playerPieces.tokens) {
                 if (token.position === position) {
-                    // Capture! Send back to home
                     token.position = 'home';
                     return { playerId, tokenId: token.id };
                 }
@@ -315,7 +324,6 @@ class GameManager {
         return null;
     }
 
-    // Move to next player's turn
     nextTurn(roomId) {
         const game = this.games.get(roomId);
         if (!game) return;
@@ -328,7 +336,6 @@ class GameManager {
         game.turnStartedAt = Date.now();
     }
 
-    // Get sanitized game state for broadcasting
     getGameState(roomId) {
         const game = this.games.get(roomId);
         if (!game) return null;
@@ -348,24 +355,20 @@ class GameManager {
         };
     }
 
-    // Handle player disconnect during game
     handleDisconnect(roomId, playerId) {
         const game = this.games.get(roomId);
         if (!game) return null;
 
-        // If it was this player's turn, skip to next
         if (game.currentPlayerId === playerId) {
             this.nextTurn(roomId);
         }
 
-        // Remove player from game
         const playerIndex = game.players.findIndex(p => p.id === playerId);
         if (playerIndex !== -1) {
             game.players.splice(playerIndex, 1);
             game.playerCount--;
             delete game.pieces[playerId];
 
-            // Adjust indices
             if (game.currentTurnIndex >= game.playerCount) {
                 game.currentTurnIndex = 0;
             }
@@ -374,7 +377,6 @@ class GameManager {
             }
         }
 
-        // If only one player left, they win
         if (game.playerCount <= 1) {
             game.phase = 'GAME_OVER';
             this.clearTurnTimer(roomId);
@@ -387,7 +389,6 @@ class GameManager {
         return { gameOver: false, game: this.getGameState(roomId) };
     }
 
-    // Delete game
     deleteGame(roomId) {
         this.clearTurnTimer(roomId);
         this.games.delete(roomId);
