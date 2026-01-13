@@ -25,30 +25,17 @@
     transition: transform 0.2s ease;
 }
 
-.game-piece.movable:hover {
-    transform: scale(1.15);
-}
-
 .game-piece.movable {
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+    cursor: pointer;
 }
 
-/* Pulse animation for movable pieces */
-.pulse-ring {
-    animation: pulseRing 1.5s ease-out infinite;
-    transform-origin: center;
+.game-piece.movable:hover {
+    transform: scale(1.1);
 }
 
-@keyframes pulseRing {
-    0% {
-        opacity: 1;
-        r: 18;
-    }
-
-    100% {
-        opacity: 0;
-        r: 28;
-    }
+/* Movable indicator - simple glow, no animation to avoid buzzing */
+.movable-glow {
+    filter: drop-shadow(0 0 6px #FFFFFF) drop-shadow(0 0 12px #FFFFFF);
 }
 
 /* Finished pieces glow */

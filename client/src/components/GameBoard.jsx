@@ -3,27 +3,20 @@ import './GameBoard.css';
 
 // Player colors (8 positions around the board)
 const PLAYER_COLORS = [
-    { name: 'Blue', hex: '#3B82F6', light: '#DBEAFE' },    // Top
-    { name: 'Red', hex: '#EF4444', light: '#FEE2E2' },     // Top-right  
-    { name: 'Purple', hex: '#8B5CF6', light: '#EDE9FE' },  // Right
-    { name: 'Green', hex: '#22C55E', light: '#DCFCE7' },   // Bottom-right
-    { name: 'Yellow', hex: '#EAB308', light: '#FEF9C3' },  // Bottom
-    { name: 'Black', hex: '#374151', light: '#E5E7EB' },   // Bottom-left
-    { name: 'Orange', hex: '#F97316', light: '#FFEDD5' },  // Left
-    { name: 'Pink', hex: '#EC4899', light: '#FCE7F3' }     // Top-left
+    { name: 'Blue', hex: '#3B82F6', light: '#DBEAFE' },
+    { name: 'Red', hex: '#EF4444', light: '#FEE2E2' },
+    { name: 'Purple', hex: '#8B5CF6', light: '#EDE9FE' },
+    { name: 'Green', hex: '#22C55E', light: '#DCFCE7' },
+    { name: 'Yellow', hex: '#EAB308', light: '#FEF9C3' },
+    { name: 'Black', hex: '#374151', light: '#E5E7EB' },
+    { name: 'Orange', hex: '#F97316', light: '#FFEDD5' },
+    { name: 'Pink', hex: '#EC4899', light: '#FCE7F3' }
 ];
 
-// Positions for each player (angle in degrees, 0=right, 90=bottom)
-const PLAYER_POSITIONS = [
-    { angle: 270, homeX: 350, homeY: 60 },    // Top (Blue)
-    { angle: 315, homeX: 590, homeY: 110 },   // Top-right (Red)
-    { angle: 0, homeX: 640, homeY: 350 },     // Right (Purple)
-    { angle: 45, homeX: 590, homeY: 590 },    // Bottom-right (Green)
-    { angle: 90, homeX: 350, homeY: 640 },    // Bottom (Yellow)
-    { angle: 135, homeX: 110, homeY: 590 },   // Bottom-left (Black)
-    { angle: 180, homeX: 60, homeY: 350 },    // Left (Orange)
-    { angle: 225, homeX: 110, homeY: 110 }    // Top-left (Pink)
-];
+// IMPORTANT: Backend uses 13 cells per player = 104 total cells
+// We need to match this exactly for proper movement
+const CELLS_PER_PLAYER = 13;
+const TOTAL_TRACK_CELLS = CELLS_PER_PLAYER * 8; // 104 cells
 
 function GameBoard({
     gameState,
@@ -41,127 +34,119 @@ function GameBoard({
         const homeBases = [];
         const trackCells = [];
         const homeStretchCells = [];
-        const connections = [];
 
+        // Home base positions (in corners/edges)
+        const homePositions = [
+            { x: center, y: 70 },          // Top (Blue) - player 0
+            { x: 590, y: 140 },            // Top-right (Red) - player 1
+            { x: 630, y: center },         // Right (Purple) - player 2
+            { x: 590, y: 560 },            // Bottom-right (Green) - player 3
+            { x: center, y: 630 },         // Bottom (Yellow) - player 4
+            { x: 110, y: 560 },            // Bottom-left (Black) - player 5
+            { x: 70, y: center },          // Left (Orange) - player 6
+            { x: 110, y: 140 }             // Top-left (Pink) - player 7
+        ];
+
+        // Create home bases
         for (let i = 0; i < 8; i++) {
-            const pos = PLAYER_POSITIONS[i];
+            const pos = homePositions[i];
             const color = PLAYER_COLORS[i];
             const isActive = i < playerCount;
-            const angleRad = (pos.angle * Math.PI) / 180;
 
-            // Home base
             homeBases.push({
                 playerIndex: i,
-                x: pos.homeX,
-                y: pos.homeY,
-                angle: pos.angle,
+                x: pos.x,
+                y: pos.y,
                 color,
                 isActive
             });
+        }
 
-            // Main track - 5 cells per player forming the outer ring
-            // Each cell curves around to connect to the next player's section
-            const trackRadius = 190;
-            const cellSpacing = 8; // degrees between cells
-            const sectionStart = pos.angle - 16; // Center the section on the player angle
+        // Create main track - 104 cells arranged in a circular path
+        // The track goes clockwise around the board
+        const trackRadius = 200;
+        const innerRadius = 150; // For the wavy part of the track
 
-            for (let j = 0; j < 5; j++) {
-                const cellAngle = sectionStart + j * cellSpacing;
-                const cellAngleRad = (cellAngle * Math.PI) / 180;
-                const x = center + Math.cos(cellAngleRad) * trackRadius;
-                const y = center + Math.sin(cellAngleRad) * trackRadius;
+        for (let cellId = 0; cellId < TOTAL_TRACK_CELLS; cellId++) {
+            const playerSection = Math.floor(cellId / CELLS_PER_PLAYER);
+            const localIndex = cellId % CELLS_PER_PLAYER;
 
-                const cellId = i * 5 + j;
-                trackCells.push({
-                    id: cellId,
-                    playerSection: i,
-                    localIndex: j,
-                    x,
-                    y,
-                    isStart: j === 2, // Middle cell is the start
-                    isEntry: j === 2, // Entry to home stretch
-                    color: j === 2 ? color : null
-                });
+            // Calculate angle for this cell
+            // Each player section spans 45 degrees (360/8)
+            // Within each section, cells are spread evenly
+            const sectionAngle = playerSection * 45; // 0, 45, 90, ...
+            const cellAngleOffset = (localIndex - 6) * 3.5; // Spread around section center
 
-                // Connection to next cell
-                if (j < 4) {
-                    const nextAngle = sectionStart + (j + 1) * cellSpacing;
-                    const nextAngleRad = (nextAngle * Math.PI) / 180;
-                    const nextX = center + Math.cos(nextAngleRad) * trackRadius;
-                    const nextY = center + Math.sin(nextAngleRad) * trackRadius;
-                    connections.push({ x1: x, y1: y, x2: nextX, y2: nextY });
-                }
-            }
+            // Start from top (-90 degrees) and go clockwise
+            const angle = -90 + sectionAngle + cellAngleOffset;
+            const angleRad = (angle * Math.PI) / 180;
 
-            // Connect to previous player's last cell
-            if (i > 0 || playerCount === 8) {
-                const prevIdx = i === 0 ? 7 : i - 1;
-                const prevPos = PLAYER_POSITIONS[prevIdx];
-                const prevSectionStart = prevPos.angle - 16;
-                const prevLastAngle = prevSectionStart + 4 * cellSpacing;
-                const prevAngleRad = (prevLastAngle * Math.PI) / 180;
-                const prevX = center + Math.cos(prevAngleRad) * trackRadius;
-                const prevY = center + Math.sin(prevAngleRad) * trackRadius;
+            // Vary radius slightly to create the wavy pattern
+            const radiusVariation = Math.sin(localIndex * Math.PI / 6) * 15;
+            const currentRadius = trackRadius + radiusVariation;
 
-                const firstAngle = sectionStart;
-                const firstAngleRad = (firstAngle * Math.PI) / 180;
-                const firstX = center + Math.cos(firstAngleRad) * trackRadius;
-                const firstY = center + Math.sin(firstAngleRad) * trackRadius;
+            const x = center + Math.cos(angleRad) * currentRadius;
+            const y = center + Math.sin(angleRad) * currentRadius;
 
-                connections.push({ x1: prevX, y1: prevY, x2: firstX, y2: firstY, curved: true });
-            }
+            // The start cell for each player is at the beginning of their section
+            const isStart = localIndex === 0;
 
-            // Home stretch - 4 colored cells leading to center
-            for (let j = 0; j < 4; j++) {
-                const stretchRadius = 140 - j * 32;
+            trackCells.push({
+                id: cellId,
+                playerSection,
+                localIndex,
+                x,
+                y,
+                isStart,
+                color: isStart ? PLAYER_COLORS[playerSection] : null
+            });
+        }
+
+        // Create home stretch cells - 4 cells per player leading to center
+        for (let playerIdx = 0; playerIdx < 8; playerIdx++) {
+            const color = PLAYER_COLORS[playerIdx];
+            // Home stretch goes from track toward center
+            // Entry point is at cell index (playerIdx * 13 + 6) - the middle of their section
+
+            const playerAngle = -90 + playerIdx * 45; // Same as section angle
+            const angleRad = (playerAngle * Math.PI) / 180;
+
+            for (let stretchIdx = 0; stretchIdx < 4; stretchIdx++) {
+                const stretchRadius = 120 - stretchIdx * 25; // Move toward center
                 const x = center + Math.cos(angleRad) * stretchRadius;
                 const y = center + Math.sin(angleRad) * stretchRadius;
 
                 homeStretchCells.push({
-                    id: `stretch_${i}_${j}`,
-                    playerIndex: i,
-                    stretchPos: j,
+                    id: `stretch_${playerIdx}_${stretchIdx}`,
+                    playerIndex: playerIdx,
+                    stretchPos: stretchIdx,
                     x,
                     y,
                     color
                 });
-
-                // Connection between stretch cells
-                if (j > 0) {
-                    const prevRadius = 140 - (j - 1) * 32;
-                    const prevX = center + Math.cos(angleRad) * prevRadius;
-                    const prevY = center + Math.sin(angleRad) * prevRadius;
-                    connections.push({ x1: prevX, y1: prevY, x2: x, y2: y });
-                }
-            }
-
-            // Connection from track entry to first stretch cell
-            const entryCell = trackCells.find(c => c.playerSection === i && c.isEntry);
-            if (entryCell) {
-                const firstStretch = homeStretchCells.find(c => c.playerIndex === i && c.stretchPos === 0);
-                if (firstStretch) {
-                    connections.push({ x1: entryCell.x, y1: entryCell.y, x2: firstStretch.x, y2: firstStretch.y });
-                }
             }
         }
 
-        return { homeBases, trackCells, homeStretchCells, connections };
+        return { homeBases, trackCells, homeStretchCells };
     }, [gameState?.playerCount]);
 
+    // Get visual position for a piece based on its game state position
     const getPiecePosition = (token, playerColorIndex) => {
         if (token.position === 'home') {
             const homeBase = boardLayout.homeBases[playerColorIndex];
             if (!homeBase) return null;
 
+            // 2x2 grid layout in home base
             const offsets = [[-18, -18], [18, -18], [-18, 18], [18, 18]];
             const [ox, oy] = offsets[token.homePosition] || [0, 0];
             return { x: homeBase.x + ox, y: homeBase.y + oy, inHome: true };
         }
 
         if (token.position === 'finished') {
-            const pos = PLAYER_POSITIONS[playerColorIndex];
-            const angleRad = (pos.angle * Math.PI) / 180;
-            const finishedRadius = 20 + token.id * 10;
+            // Finished pieces go to center area
+            const playerAngle = -90 + playerColorIndex * 45;
+            const angleRad = (playerAngle * Math.PI) / 180;
+            const finishedRadius = 25 + token.id * 10;
             return {
                 x: center + Math.cos(angleRad) * finishedRadius,
                 y: center + Math.sin(angleRad) * finishedRadius,
@@ -178,6 +163,7 @@ function GameBoard({
         }
 
         if (typeof token.position === 'number') {
+            // Position is a track cell ID (0-103)
             const cell = boardLayout.trackCells.find(c => c.id === token.position);
             if (cell) return { x: cell.x, y: cell.y };
         }
@@ -210,41 +196,28 @@ function GameBoard({
                     rx="15" fill="none" stroke="#65A30D" strokeWidth="8"
                 />
 
-                {/* Connection lines between cells */}
-                {boardLayout.connections.map((conn, idx) => (
-                    <line
-                        key={`conn-${idx}`}
-                        x1={conn.x1}
-                        y1={conn.y1}
-                        x2={conn.x2}
-                        y2={conn.y2}
-                        stroke="#1F2937"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                    />
-                ))}
-
-                {/* Home Bases */}
+                {/* Home Bases - Rounded boxes */}
                 {boardLayout.homeBases.map((base, i) => (
                     <g key={`home-${i}`} opacity={base.isActive ? 1 : 0.25}>
                         <rect
-                            x={base.x - 50}
-                            y={base.y - 50}
-                            width={100}
-                            height={100}
-                            rx="18"
+                            x={base.x - 45}
+                            y={base.y - 45}
+                            width={90}
+                            height={90}
+                            rx="16"
                             fill={base.color.light}
                             stroke={base.color.hex}
-                            strokeWidth="4"
+                            strokeWidth="3"
                         />
-                        {[[-22, -22], [22, -22], [-22, 22], [22, 22]].map(([ox, oy], slotIdx) => (
+                        {/* 4 piece slots */}
+                        {[[-18, -18], [18, -18], [-18, 18], [18, 18]].map(([ox, oy], slotIdx) => (
                             <circle
                                 key={`slot-${i}-${slotIdx}`}
                                 cx={base.x + ox}
                                 cy={base.y + oy}
-                                r="16"
+                                r="14"
                                 fill={base.color.hex}
-                                opacity="0.35"
+                                opacity="0.3"
                                 stroke={base.color.hex}
                                 strokeWidth="2"
                             />
@@ -252,36 +225,36 @@ function GameBoard({
                     </g>
                 ))}
 
-                {/* Track Cells */}
+                {/* Main Track Cells - 104 cells total */}
                 {boardLayout.trackCells.map((cell) => (
                     <circle
                         key={`track-${cell.id}`}
                         cx={cell.x}
                         cy={cell.y}
-                        r="15"
+                        r="11"
                         fill={cell.color?.hex || '#FFFFFF'}
                         stroke="#1F2937"
-                        strokeWidth="2.5"
+                        strokeWidth="2"
                     />
                 ))}
 
-                {/* Home Stretch Cells */}
+                {/* Home Stretch Cells - Colored paths to center */}
                 {boardLayout.homeStretchCells.map((cell) => (
                     <circle
                         key={cell.id}
                         cx={cell.x}
                         cy={cell.y}
-                        r="15"
+                        r="11"
                         fill={cell.color.hex}
                         stroke="#1F2937"
-                        strokeWidth="2.5"
+                        strokeWidth="2"
                     />
                 ))}
 
-                {/* Center Diamond */}
+                {/* Center Diamond Goal */}
                 <g transform={`translate(${center}, ${center})`}>
-                    <polygon points="0,-45 45,0 0,45 -45,0" fill="#FFFFFF" stroke="#1F2937" strokeWidth="3" />
-                    <polygon points="0,-32 32,0 0,32 -32,0" fill="#FEF9C3" stroke="#1F2937" strokeWidth="2" />
+                    <polygon points="0,-40 40,0 0,40 -40,0" fill="#FFFFFF" stroke="#1F2937" strokeWidth="3" />
+                    <polygon points="0,-28 28,0 0,28 -28,0" fill="#FEF9C3" stroke="#1F2937" strokeWidth="2" />
                 </g>
 
                 {/* Game Pieces */}
@@ -296,15 +269,43 @@ function GameBoard({
                         return (
                             <g
                                 key={`piece-${playerId}-${token.id}`}
-                                className={`game-piece ${isMovable ? 'movable' : ''}`}
+                                className={`game-piece ${isMovable ? 'movable movable-glow' : ''}`}
                                 onClick={() => handlePieceClick(playerId, token.id)}
-                                style={{ cursor: isMovable ? 'pointer' : 'default' }}
                             >
-                                <circle cx={pos.x + 2} cy={pos.y + 3} r={pos.inHome ? 11 : 13} fill="rgba(0,0,0,0.25)" />
-                                <circle cx={pos.x} cy={pos.y} r={pos.inHome ? 11 : 13} fill={color.hex} stroke="#FFF" strokeWidth="3" />
-                                <circle cx={pos.x - 4} cy={pos.y - 4} r={3} fill="rgba(255,255,255,0.6)" />
+                                {/* Shadow */}
+                                <circle
+                                    cx={pos.x + 2}
+                                    cy={pos.y + 3}
+                                    r={pos.inHome ? 10 : 12}
+                                    fill="rgba(0,0,0,0.2)"
+                                />
+                                {/* Main piece */}
+                                <circle
+                                    cx={pos.x}
+                                    cy={pos.y}
+                                    r={pos.inHome ? 10 : 12}
+                                    fill={color.hex}
+                                    stroke="#FFFFFF"
+                                    strokeWidth="3"
+                                />
+                                {/* Highlight */}
+                                <circle
+                                    cx={pos.x - 3}
+                                    cy={pos.y - 3}
+                                    r={3}
+                                    fill="rgba(255,255,255,0.5)"
+                                />
+                                {/* Movable border indicator */}
                                 {isMovable && (
-                                    <circle cx={pos.x} cy={pos.y} r="20" fill="none" stroke="#FFF" strokeWidth="3" className="pulse-ring" />
+                                    <circle
+                                        cx={pos.x}
+                                        cy={pos.y}
+                                        r={pos.inHome ? 14 : 16}
+                                        fill="none"
+                                        stroke="#FFD700"
+                                        strokeWidth="3"
+                                        strokeDasharray="4 2"
+                                    />
                                 )}
                             </g>
                         );
