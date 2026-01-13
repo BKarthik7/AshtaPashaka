@@ -24,7 +24,8 @@ function GameBoard({
     myPlayerId,
     isMyTurn
 }) {
-    const boardSize = 700;
+    // INCREASED board size to fit everything
+    const boardSize = 800;
     const center = boardSize / 2;
 
     const boardLayout = useMemo(() => {
@@ -33,16 +34,16 @@ function GameBoard({
         const trackCells = [];
         const homeStretchCells = [];
 
-        // Home base positions
+        // Home base positions - PUSHED FURTHER OUT into corners
         const homePositions = [
-            { x: center, y: 70 },
-            { x: 590, y: 140 },
-            { x: 630, y: center },
-            { x: 590, y: 560 },
-            { x: center, y: 630 },
-            { x: 110, y: 560 },
-            { x: 70, y: center },
-            { x: 110, y: 140 }
+            { x: center, y: 50 },           // Top (Blue)
+            { x: 700, y: 115 },             // Top-right (Red)
+            { x: 750, y: center },          // Right (Purple)
+            { x: 700, y: 685 },             // Bottom-right (Green)
+            { x: center, y: 750 },          // Bottom (Yellow)
+            { x: 100, y: 685 },             // Bottom-left (Black)
+            { x: 50, y: center },           // Left (Orange)
+            { x: 100, y: 115 }              // Top-left (Pink)
         ];
 
         for (let i = 0; i < 8; i++) {
@@ -59,8 +60,9 @@ function GameBoard({
             });
         }
 
-        // Main track - separate white cells and colored start cells
-        const trackRadius = 200;
+        // Main track - WAVY PATTERN with 8 waves (one per player section)
+        const baseRadius = 260;
+        const waveAmplitude = 40; // How much the wave goes in/out
         const whiteCells = [];
         const coloredCells = [];
 
@@ -68,13 +70,15 @@ function GameBoard({
             const playerSection = Math.floor(cellId / CELLS_PER_PLAYER);
             const localIndex = cellId % CELLS_PER_PLAYER;
 
-            const sectionAngle = playerSection * 45;
-            const cellAngleOffset = (localIndex - 6) * 3.5;
-            const angle = -90 + sectionAngle + cellAngleOffset;
+            // Angle for this cell (evenly distributed)
+            const anglePerCell = 360 / TOTAL_TRACK_CELLS;
+            const angle = -90 + cellId * anglePerCell;
             const angleRad = (angle * Math.PI) / 180;
 
-            const radiusVariation = Math.sin(localIndex * Math.PI / 6) * 15;
-            const currentRadius = trackRadius + radiusVariation;
+            // Create 8 waves around the circle (one wave per player section)
+            const waveAngle = cellId * (2 * Math.PI / CELLS_PER_PLAYER);
+            const waveOffset = Math.sin(waveAngle) * waveAmplitude;
+            const currentRadius = baseRadius + waveOffset;
 
             const x = center + Math.cos(angleRad) * currentRadius;
             const y = center + Math.sin(angleRad) * currentRadius;
@@ -100,14 +104,15 @@ function GameBoard({
         // Combine: white first (bottom), colored on top
         trackCells.push(...whiteCells, ...coloredCells);
 
-        // Home stretch cells (all colored)
+        // Home stretch cells - from track toward center
         for (let playerIdx = 0; playerIdx < 8; playerIdx++) {
             const color = PLAYER_COLORS[playerIdx];
             const playerAngle = -90 + playerIdx * 45;
             const angleRad = (playerAngle * Math.PI) / 180;
 
             for (let stretchIdx = 0; stretchIdx < 4; stretchIdx++) {
-                const stretchRadius = 120 - stretchIdx * 25;
+                // Start at 185 (inside the wave trough), go toward diamond
+                const stretchRadius = 185 - stretchIdx * 35;
                 const x = center + Math.cos(angleRad) * stretchRadius;
                 const y = center + Math.sin(angleRad) * stretchRadius;
 
@@ -147,9 +152,8 @@ function GameBoard({
             return { x: homeBase.x + ox, y: homeBase.y + oy, inHome: true };
         }
 
-        // Finished pieces are drawn separately in diamond
         if (token.position === 'finished') {
-            return null; // Don't draw as individual piece
+            return null;
         }
 
         if (typeof token.position === 'string' && token.position.startsWith('home_stretch_')) {
@@ -197,21 +201,21 @@ function GameBoard({
                 {boardLayout.homeBases.map((base, i) => (
                     <g key={`home-${i}`} opacity={base.isActive ? 1 : 0.25}>
                         <rect
-                            x={base.x - 45}
-                            y={base.y - 45}
-                            width={90}
-                            height={90}
-                            rx="16"
+                            x={base.x - 42}
+                            y={base.y - 42}
+                            width={84}
+                            height={84}
+                            rx="14"
                             fill={base.color.light}
                             stroke={base.color.hex}
                             strokeWidth="3"
                         />
-                        {[[-18, -18], [18, -18], [-18, 18], [18, 18]].map(([ox, oy], slotIdx) => (
+                        {[[-16, -16], [16, -16], [-16, 16], [16, 16]].map(([ox, oy], slotIdx) => (
                             <circle
                                 key={`slot-${i}-${slotIdx}`}
                                 cx={base.x + ox}
                                 cy={base.y + oy}
-                                r="14"
+                                r="12"
                                 fill={base.color.hex}
                                 opacity="0.3"
                                 stroke={base.color.hex}
@@ -221,26 +225,26 @@ function GameBoard({
                     </g>
                 ))}
 
-                {/* Main Track - White cells first (bottom layer) */}
+                {/* Main Track - White cells (bottom layer) */}
                 {boardLayout.trackCells.filter(c => !c.isStart).map((cell) => (
                     <circle
                         key={`track-${cell.id}`}
                         cx={cell.x}
                         cy={cell.y}
-                        r="11"
+                        r="8"
                         fill="#FFFFFF"
                         stroke="#1F2937"
-                        strokeWidth="2"
+                        strokeWidth="1.5"
                     />
                 ))}
 
-                {/* Home Stretch Cells - Colored (top layer) */}
+                {/* Home Stretch Cells - Colored */}
                 {boardLayout.homeStretchCells.map((cell) => (
                     <circle
                         key={cell.id}
                         cx={cell.x}
                         cy={cell.y}
-                        r="11"
+                        r="10"
                         fill={cell.color.hex}
                         stroke="#1F2937"
                         strokeWidth="2"
@@ -253,46 +257,43 @@ function GameBoard({
                         key={`track-start-${cell.id}`}
                         cx={cell.x}
                         cy={cell.y}
-                        r="11"
+                        r="10"
                         fill={cell.color.hex}
                         stroke="#1F2937"
                         strokeWidth="2"
                     />
                 ))}
 
-                {/* Center Diamond - LARGER */}
+                {/* Center Diamond */}
                 <g transform={`translate(${center}, ${center})`}>
-                    <polygon points="0,-55 55,0 0,55 -55,0" fill="#FFFFFF" stroke="#1F2937" strokeWidth="3" />
-                    <polygon points="0,-42 42,0 0,42 -42,0" fill="#FEF9C3" stroke="#1F2937" strokeWidth="2" />
+                    <polygon points="0,-50 50,0 0,50 -50,0" fill="#FFFFFF" stroke="#1F2937" strokeWidth="3" />
+                    <polygon points="0,-36 36,0 0,36 -36,0" fill="#FEF9C3" stroke="#1F2937" strokeWidth="2" />
 
-                    {/* Finished pieces display inside diamond */}
-                    {gameState?.pieces && Object.entries(finishedCounts).map(([playerId, data], idx) => {
+                    {/* Finished pieces display */}
+                    {gameState?.pieces && Object.entries(finishedCounts).map(([playerId, data]) => {
                         if (data.count === 0) return null;
 
                         const color = PLAYER_COLORS[data.colorIndex];
-                        // Position finished pieces in a circular arrangement inside diamond
                         const angle = (-90 + data.colorIndex * 45) * Math.PI / 180;
-                        const radius = 22;
+                        const radius = 20;
                         const x = Math.cos(angle) * radius;
                         const y = Math.sin(angle) * radius;
 
                         return (
                             <g key={`finished-${playerId}`}>
-                                {/* Piece indicator */}
                                 <circle
                                     cx={x}
                                     cy={y}
-                                    r="12"
+                                    r="11"
                                     fill={color.hex}
                                     stroke="#FFFFFF"
                                     strokeWidth="2"
                                 />
-                                {/* Count number */}
                                 <text
                                     x={x}
                                     y={y + 4}
                                     textAnchor="middle"
-                                    fontSize="11"
+                                    fontSize="10"
                                     fontWeight="bold"
                                     fill="#FFFFFF"
                                 >
@@ -303,7 +304,7 @@ function GameBoard({
                     })}
                 </g>
 
-                {/* Game Pieces (not finished) */}
+                {/* Game Pieces */}
                 {gameState?.pieces && Object.entries(gameState.pieces).map(([playerId, playerPieces]) => (
                     playerPieces.tokens.map(token => {
                         const pos = getPiecePosition(token, playerPieces.colorIndex);
@@ -319,38 +320,34 @@ function GameBoard({
                                 onClick={() => handlePieceClick(playerId, token.id)}
                                 style={{ pointerEvents: isMovable ? 'auto' : 'none' }}
                             >
-                                {/* Shadow */}
                                 <circle
-                                    cx={pos.x + 2}
-                                    cy={pos.y + 3}
-                                    r={pos.inHome ? 10 : 12}
+                                    cx={pos.x + 1}
+                                    cy={pos.y + 2}
+                                    r={pos.inHome ? 10 : 11}
                                     fill="rgba(0,0,0,0.2)"
                                 />
-                                {/* Main piece */}
                                 <circle
                                     cx={pos.x}
                                     cy={pos.y}
-                                    r={pos.inHome ? 10 : 12}
+                                    r={pos.inHome ? 10 : 11}
                                     fill={color.hex}
                                     stroke="#FFFFFF"
-                                    strokeWidth="3"
+                                    strokeWidth="2.5"
                                 />
-                                {/* Highlight */}
                                 <circle
-                                    cx={pos.x - 3}
-                                    cy={pos.y - 3}
-                                    r={3}
+                                    cx={pos.x - 2}
+                                    cy={pos.y - 2}
+                                    r={2}
                                     fill="rgba(255,255,255,0.5)"
                                 />
-                                {/* Movable indicator */}
                                 {isMovable && (
                                     <circle
                                         cx={pos.x}
                                         cy={pos.y}
-                                        r={pos.inHome ? 14 : 16}
+                                        r={pos.inHome ? 14 : 15}
                                         fill="none"
                                         stroke="#FFD700"
-                                        strokeWidth="3"
+                                        strokeWidth="2.5"
                                         strokeDasharray="4 2"
                                     />
                                 )}
