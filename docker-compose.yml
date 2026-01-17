@@ -1,0 +1,95 @@
+version: '3.9'
+
+services:
+  # Frontend service - single instance
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - VITE_WS_URL=http://localhost:8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - ashtapashaka-network
+    cpu_shares: 512
+    mem_limit: 512m
+    memswap_limit: 512m
+
+  # Backend service with autoscaling (can scale with --scale backend=N)
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    # No container_name - allows scaling
+    # No fixed port mapping - use load balancer instead
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ashtapashaka-network
+    cpu_shares: 512
+    mem_limit: 512m
+    memswap_limit: 512m
+
+  # Load balancer for backend services (Nginx)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ashtapashaka-network
+    cpu_shares: 256
+    mem_limit: 256m
+    memswap_limit: 256m
+
+  # Optional: Prometheus for metrics/monitoring
+  # NOTE: Comment out or change port if you have a system Prometheus running
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   restart: unless-stopped
+  #   networks:
+  #     - ashtapashaka-network
+  #   cpu_shares: 256
+  #   mem_limit: 256m
+  #   memswap_limit: 256m
+
+networks:
+  ashtapashaka-network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+    driver: local

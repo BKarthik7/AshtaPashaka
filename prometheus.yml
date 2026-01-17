@@ -1,0 +1,42 @@
+# Prometheus configuration for monitoring AshtaPashaka services
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: "ashtapashaka"
+    environment: "docker-compose"
+
+# Alert rules
+rule_files:
+  - "/etc/prometheus/alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Monitor Prometheus itself
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Monitor Nginx (if Node Exporter is set up)
+  - job_name: "nginx"
+    static_configs:
+      - targets: ["nginx:80"]
+    metrics_path: "/metrics"
+    scrape_interval: 30s
+
+  # Monitor Backend services
+  - job_name: "backend"
+    static_configs:
+      - targets: ["backend:3001"]
+    metrics_path: "/metrics"
+    scrape_interval: 30s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # Docker daemon metrics (if needed)
+  - job_name: "docker"
+    static_configs:
+      - targets: ["localhost:9323"]
+    scrape_interval: 60s
