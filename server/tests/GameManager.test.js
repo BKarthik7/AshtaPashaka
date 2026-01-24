@@ -238,11 +238,9 @@ describe('GameManager', () => {
             expect(result.gameOver).toBe(false);
             const game = gameManager.getGame('TEST_ROOM_3');
 
-            // p1 removed. Current buggy behavior skips p2 and goes to p3.
-            // Documentation of current behavior: when current player disconnects, 
-            // the turn index increments AND the array shifts, causing a skip.
+            // p1 removed, p2 should be current (bug fixed)
             expect(game.players).toHaveLength(2);
-            expect(game.currentPlayerId).toBe('p3');
+            expect(game.currentPlayerId).toBe('p2');
         });
 
         test('should end game if only 1 player left', () => {
