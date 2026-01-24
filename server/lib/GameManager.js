@@ -355,26 +355,32 @@ class GameManager {
         };
     }
 
+
     handleDisconnect(roomId, playerId) {
         const game = this.games.get(roomId);
         if (!game) return null;
+
+        const playerIndex = game.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) return { gameOver: false, game: this.getGameState(roomId) };
 
         if (game.currentPlayerId === playerId) {
             this.nextTurn(roomId);
         }
 
-        const playerIndex = game.players.findIndex(p => p.id === playerId);
-        if (playerIndex !== -1) {
-            game.players.splice(playerIndex, 1);
-            game.playerCount--;
-            delete game.pieces[playerId];
+        game.players.splice(playerIndex, 1);
+        game.playerCount--;
+        delete game.pieces[playerId];
 
-            if (game.currentTurnIndex >= game.playerCount) {
-                game.currentTurnIndex = 0;
-            }
-            if (game.players.length > 0) {
-                game.currentPlayerId = game.players[game.currentTurnIndex].id;
-            }
+        // Fix turn index: if removed player was at or before current index, adjust
+        if (playerIndex <= game.currentTurnIndex && game.currentTurnIndex > 0) {
+            game.currentTurnIndex--;
+        }
+
+        if (game.currentTurnIndex >= game.playerCount) {
+            game.currentTurnIndex = 0;
+        }
+        if (game.players.length > 0) {
+            game.currentPlayerId = game.players[game.currentTurnIndex].id;
         }
 
         if (game.playerCount <= 1) {
