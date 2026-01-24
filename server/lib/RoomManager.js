@@ -64,16 +64,38 @@ class RoomManager {
     }
 
     // Join a room
-    joinRoom(roomId, playerId, playerName, playerWs) {
+    // Enhanced with IP validation and rejoin support
+    joinRoom(roomId, playerId, playerName, playerWs, clientIP = null, ipTracker = null) {
         const room = this.rooms.get(roomId);
 
         if (!room) {
             return { success: false, error: 'Room not found' };
         }
 
+        // Check if this is a reconnecting player (same playerId already in room)
+        const existingPlayer = room.players.find(p => p.id === playerId);
+        if (existingPlayer) {
+            // Player reconnecting - update their websocket reference
+            existingPlayer.ws = playerWs;
+            return { success: true, isSpectator: false, isReconnect: true, room };
+        }
+
+        // IP restriction check (only if ipTracker provided)
+        if (clientIP && ipTracker) {
+            // Check if this IP is already in this room as a different player
+            const existingPlayerId = ipTracker.getPlayerIdByIPInRoom(clientIP, roomId);
+            if (existingPlayerId && existingPlayerId !== playerId) {
+                return {
+                    success: false,
+                    error: 'Another player from this IP address is already in this room. Only one player per IP is allowed.'
+                };
+            }
+        }
+
         // Check if game already started
         if (room.gameStarted) {
-            // Add as spectator
+            // Check if player was originally part of the game (by matching name or allowing rejoin)
+            // For now, add as spectator since they're a new player
             room.spectators.push({
                 id: playerId,
                 name: playerName,

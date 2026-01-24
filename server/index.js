@@ -180,7 +180,7 @@ function handleJoinRoom(ws, message, playerId, clientIP) {
         return;
     }
 
-    const result = roomManager.joinRoom(roomId.toUpperCase(), playerId, playerName.trim(), ws);
+    const result = roomManager.joinRoom(roomId.toUpperCase(), playerId, playerName.trim(), ws, clientIP, ipTracker);
 
     if (!result.success) {
         send(ws, { type: 'ERROR', message: result.error });
@@ -191,6 +191,33 @@ function handleJoinRoom(ws, message, playerId, clientIP) {
     ipTracker.updateRoom(clientIP, roomId.toUpperCase());
 
     const roomState = roomManager.getRoomState(roomId.toUpperCase());
+
+    // Handle reconnection scenario
+    if (result.isReconnect) {
+        send(ws, {
+            type: 'RECONNECTED_TO_ROOM',
+            roomId: roomId.toUpperCase(),
+            ...roomState
+        });
+
+        // Send current game state if game is in progress
+        if (result.room.gameStarted) {
+            const gameState = gameManager.getGameState(roomId.toUpperCase());
+            if (gameState) {
+                send(ws, { type: 'GAME_STATE', ...gameState });
+            }
+        }
+
+        // Notify others of reconnection
+        roomManager.broadcast(roomId.toUpperCase(), {
+            type: 'PLAYER_RECONNECTED',
+            playerId: playerId,
+            ...roomState
+        }, playerId);
+
+        console.log(`${playerName} reconnected to room ${roomId}`);
+        return;
+    }
 
     if (result.isSpectator) {
         send(ws, {
