@@ -315,6 +315,28 @@ The game uses 8 distinct colors for players:
 - **Capture Strategy**: Try to capture opponent pieces to send them back home
 - **Multiple Pieces**: Having multiple pieces on the track increases your movement flexibility
 
+## 🧪 Testing
+
+The backend includes a comprehensive test suite using **Jest**.
+
+### Running Tests
+
+To run the backend tests:
+
+```bash
+cd server
+npm test
+```
+
+### Coverage
+
+The test suite covers:
+- **GameManager**: Rules, turns, movement, and capturing logic
+- **RoomManager**: Room lifecycle, spectator handling, and broadcasting
+- **IPTracker**: Player session tracking and reconnection logic
+
+**Current Status**: 51 tests passing with high code coverage (~80-98%).
+
 ## 🐛 Known Limitations
 
 - Maximum 8 players per room (by design)
