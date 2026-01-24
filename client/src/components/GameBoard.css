@@ -30,6 +30,36 @@
     filter: drop-shadow(0 0 10px gold);
 }
 
+/* Aeroplane path animations */
+@keyframes dash-flow {
+    to {
+        stroke-dashoffset: -28;
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px currentColor);
+        opacity: 0.8;
+    }
+
+    50% {
+        filter: drop-shadow(0 0 8px currentColor);
+        opacity: 1;
+    }
+}
+
+.aeroplane-path-line {
+    animation: dash-flow 2s linear infinite;
+}
+
+.aeroplane-icon {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+
 /* Responsive sizing */
 @media (max-width: 768px) {
     .game-board-wrapper {

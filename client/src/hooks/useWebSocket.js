@@ -6,7 +6,7 @@ const getWebSocketUrl = () => {
 
     if (!envUrl) {
         // Default for local development
-        return 'ws://localhost:3001';
+        return 'ws://10.20.19.137:3001';
     }
 
     // Convert https:// to wss:// and http:// to ws://

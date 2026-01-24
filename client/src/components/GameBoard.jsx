@@ -16,6 +16,19 @@ const PLAYER_COLORS = [
 const CELLS_PER_PLAYER = 13;
 const TOTAL_TRACK_CELLS = CELLS_PER_PLAYER * 8;
 
+// Aeroplane teleportation paths - must match backend configuration
+const AEROPLANE_PATHS = [
+    { colorIndex: 0, source: 20, destination: 70 },   // Blue
+    { colorIndex: 1, source: 33, destination: 83 },   // Red
+    { colorIndex: 2, source: 46, destination: 96 },   // Purple
+    { colorIndex: 3, source: 59, destination: 5 },    // Green (wraps around)
+    { colorIndex: 4, source: 72, destination: 18 },   // Yellow (wraps around)
+    { colorIndex: 5, source: 85, destination: 31 },   // Black (wraps around)
+    { colorIndex: 6, source: 98, destination: 44 },   // Orange (wraps around)
+    { colorIndex: 7, source: 7, destination: 57 }     // Pink
+];
+
+
 function GameBoard({
     gameState,
     validMoves = [],
@@ -251,6 +264,81 @@ function GameBoard({
                     />
                 ))}
 
+                {/* Aeroplane Paths - Teleportation shortcuts (render before colored cells) */}
+                {AEROPLANE_PATHS.map((path, idx) => {
+                    const sourceCell = boardLayout.trackCells.find(c => c.id === path.source);
+                    const destCell = boardLayout.trackCells.find(c => c.id === path.destination);
+                    if (!sourceCell || !destCell) return null;
+
+                    const color = PLAYER_COLORS[path.colorIndex];
+
+                    // Create gentle curved path using simple quadratic bezier
+                    const dx = destCell.x - sourceCell.x;
+                    const dy = destCell.y - sourceCell.y;
+
+                    // Simple control point - offset toward center for gentle curve
+                    const midX = (sourceCell.x + destCell.x) / 2;
+                    const midY = (sourceCell.y + destCell.y) / 2;
+
+                    // Small offset toward center for subtle curve
+                    const offsetFactor = 0.15;
+                    const controlX = midX + (center - midX) * offsetFactor;
+                    const controlY = midY + (center - midY) * offsetFactor;
+
+                    const spiralPath = `M ${sourceCell.x} ${sourceCell.y} Q ${controlX} ${controlY} ${destCell.x} ${destCell.y}`;
+
+                    return (
+                        <g key={`aeroplane-path-${idx}`} opacity="0.7">
+                            {/* Dotted gentle curve line */}
+                            <path
+                                d={spiralPath}
+                                stroke={color.hex}
+                                strokeWidth="2"
+                                strokeDasharray="6,4"
+                                fill="none"
+                                opacity="0.5"
+                                className="aeroplane-path-line"
+                            />
+
+                            {/* Source aeroplane icon (larger) - using Unicode emoji */}
+                            <g transform={`translate(${sourceCell.x}, ${sourceCell.y})`}>
+                                <circle r="15" fill={color.light} stroke={color.hex} strokeWidth="2.5" opacity="0.95" />
+                                {/* Standard airplane emoji ✈ */}
+                                <text
+                                    textAnchor="middle"
+                                    dominantBaseline="central"
+                                    fontSize="20"
+                                    fill={color.hex}
+                                    fontFamily="Arial, sans-serif"
+                                >
+                                    ✈
+                                </text>
+                                <animateTransform
+                                    attributeName="transform"
+                                    type="scale"
+                                    values="1;1.15;1"
+                                    dur="2s"
+                                    repeatCount="indefinite"
+                                />
+                            </g>
+
+                            {/* Destination marker (smaller) */}
+                            <g transform={`translate(${destCell.x}, ${destCell.y})`}>
+                                <circle r="12" fill={color.light} stroke={color.hex} strokeWidth="2" opacity="0.95" />
+                                <text
+                                    textAnchor="middle"
+                                    dominantBaseline="central"
+                                    fontSize="14"
+                                    fill={color.hex}
+                                    fontFamily="Arial, sans-serif"
+                                >
+                                    ✈
+                                </text>
+                            </g>
+                        </g>
+                    );
+                })}
+
                 {/* Main Track - Colored start cells (top layer) */}
                 {boardLayout.trackCells.filter(c => c.isStart).map((cell) => (
                     <circle
@@ -305,56 +393,58 @@ function GameBoard({
                 </g>
 
                 {/* Game Pieces */}
-                {gameState?.pieces && Object.entries(gameState.pieces).map(([playerId, playerPieces]) => (
-                    playerPieces.tokens.map(token => {
-                        const pos = getPiecePosition(token, playerPieces.colorIndex);
-                        if (!pos) return null;
+                {
+                    gameState?.pieces && Object.entries(gameState.pieces).map(([playerId, playerPieces]) => (
+                        playerPieces.tokens.map(token => {
+                            const pos = getPiecePosition(token, playerPieces.colorIndex);
+                            if (!pos) return null;
 
-                        const isMovable = canMoveToken(playerId, token.id);
-                        const color = PLAYER_COLORS[playerPieces.colorIndex];
+                            const isMovable = canMoveToken(playerId, token.id);
+                            const color = PLAYER_COLORS[playerPieces.colorIndex];
 
-                        return (
-                            <g
-                                key={`piece-${playerId}-${token.id}`}
-                                className={`game-piece ${isMovable ? 'movable' : ''}`}
-                                onClick={() => handlePieceClick(playerId, token.id)}
-                                style={{ pointerEvents: isMovable ? 'auto' : 'none' }}
-                            >
-                                <circle
-                                    cx={pos.x + 1}
-                                    cy={pos.y + 2}
-                                    r={pos.inHome ? 10 : 11}
-                                    fill="rgba(0,0,0,0.2)"
-                                />
-                                <circle
-                                    cx={pos.x}
-                                    cy={pos.y}
-                                    r={pos.inHome ? 10 : 11}
-                                    fill={color.hex}
-                                    stroke="#FFFFFF"
-                                    strokeWidth="2.5"
-                                />
-                                <circle
-                                    cx={pos.x - 2}
-                                    cy={pos.y - 2}
-                                    r={2}
-                                    fill="rgba(255,255,255,0.5)"
-                                />
-                                {isMovable && (
+                            return (
+                                <g
+                                    key={`piece-${playerId}-${token.id}`}
+                                    className={`game-piece ${isMovable ? 'movable' : ''}`}
+                                    onClick={() => handlePieceClick(playerId, token.id)}
+                                    style={{ pointerEvents: isMovable ? 'auto' : 'none' }}
+                                >
+                                    <circle
+                                        cx={pos.x + 1}
+                                        cy={pos.y + 2}
+                                        r={pos.inHome ? 10 : 11}
+                                        fill="rgba(0,0,0,0.2)"
+                                    />
                                     <circle
                                         cx={pos.x}
                                         cy={pos.y}
-                                        r={pos.inHome ? 14 : 15}
-                                        fill="none"
-                                        stroke="#FFD700"
+                                        r={pos.inHome ? 10 : 11}
+                                        fill={color.hex}
+                                        stroke="#FFFFFF"
                                         strokeWidth="2.5"
-                                        strokeDasharray="4 2"
                                     />
-                                )}
-                            </g>
-                        );
-                    })
-                ))}
+                                    <circle
+                                        cx={pos.x - 2}
+                                        cy={pos.y - 2}
+                                        r={2}
+                                        fill="rgba(255,255,255,0.5)"
+                                    />
+                                    {isMovable && (
+                                        <circle
+                                            cx={pos.x}
+                                            cy={pos.y}
+                                            r={pos.inHome ? 14 : 15}
+                                            fill="none"
+                                            stroke="#FFD700"
+                                            strokeWidth="2.5"
+                                            strokeDasharray="4 2"
+                                        />
+                                    )}
+                                </g>
+                            );
+                        })
+                    ))
+                }
             </svg>
         </div>
     );

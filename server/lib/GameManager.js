@@ -10,6 +10,19 @@ const CELLS_PER_PLAYER = 13;
 const TOTAL_TRACK_CELLS = CELLS_PER_PLAYER * 8; // 104
 const HOME_STRETCH_LENGTH = 4; // 4 cells in home stretch before center
 
+// Aeroplane teleportation paths - one per color
+// Each color gets a shortcut that teleports them forward ~50 cells
+const AEROPLANE_PATHS = [
+    { colorIndex: 0, source: 20, destination: 70 },   // Blue
+    { colorIndex: 1, source: 33, destination: 83 },   // Red
+    { colorIndex: 2, source: 46, destination: 96 },   // Purple
+    { colorIndex: 3, source: 59, destination: 5 },    // Green (wraps around)
+    { colorIndex: 4, source: 72, destination: 18 },   // Yellow (wraps around)
+    { colorIndex: 5, source: 85, destination: 31 },   // Black (wraps around)
+    { colorIndex: 6, source: 98, destination: 44 },   // Orange (wraps around)
+    { colorIndex: 7, source: 7, destination: 57 }     // Pink
+];
+
 class GameManager {
     constructor() {
         this.games = new Map();
@@ -246,7 +259,15 @@ class GameManager {
                 // Normal movement on track
                 const newPosition = (token.position + diceValue) % TOTAL_TRACK_CELLS;
                 token.position = newPosition;
-                captured = this.checkCapture(game, playerId, newPosition);
+
+                // Check for aeroplane path teleportation
+                const aeroplaneJump = this.checkAeroplanePath(playerColorIndex, newPosition);
+                if (aeroplaneJump) {
+                    token.position = aeroplaneJump.destination;
+                    captured = this.checkCapture(game, playerId, aeroplaneJump.destination);
+                } else {
+                    captured = this.checkCapture(game, playerId, newPosition);
+                }
             }
             moved = true;
         } else if (typeof token.position === 'string' && token.position.startsWith('home_stretch_')) {
@@ -308,6 +329,14 @@ class GameManager {
             gameOver: false,
             game: this.getGameState(roomId)
         };
+    }
+
+    checkAeroplanePath(playerColorIndex, position) {
+        // Find if this position is a source cell for the player's color
+        const path = AEROPLANE_PATHS.find(
+            p => p.colorIndex === playerColorIndex && p.source === position
+        );
+        return path || null;
     }
 
     checkCapture(game, movingPlayerId, position) {
